@@ -22,18 +22,15 @@ impl ListFilesHandler {
     }
 }
 
+#[async_trait::async_trait]
 impl ToolHandler for ListFilesHandler {
-    fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
-        let rt = tokio::runtime::Runtime::new()?;
-        
+    async fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
         let path = arguments
             .as_ref()
             .and_then(|args| args.get(mcp_constants::PARAM_PATH))
             .and_then(|v| v.as_str());
 
-        let files = rt.block_on(async {
-            self.github_client.list_files(path).await
-        })?;
+        let files = self.github_client.list_files(path).await?;
 
         let content = utils::format_file_info(&files);
 
@@ -59,19 +56,16 @@ impl GetFileContentHandler {
     }
 }
 
+#[async_trait::async_trait]
 impl ToolHandler for GetFileContentHandler {
-    fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
-        let rt = tokio::runtime::Runtime::new()?;
-        
+    async fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
         let path = arguments
             .as_ref()
             .and_then(|args| args.get(mcp_constants::PARAM_PATH))
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!(errors::PATH_REQUIRED))?;
 
-        let content = rt.block_on(async {
-            self.github_client.get_file_content(path).await
-        })?;
+        let content = self.github_client.get_file_content(path).await?;
 
         let response_text = utils::format_file_content(path, &content);
 
@@ -97,13 +91,10 @@ impl GetLatestCommitHandler {
     }
 }
 
+#[async_trait::async_trait]
 impl ToolHandler for GetLatestCommitHandler {
-    fn call(&self, _arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
-        let rt = tokio::runtime::Runtime::new()?;
-        
-        let sha = rt.block_on(async {
-            self.github_client.get_latest_commit_sha().await
-        })?;
+    async fn call(&self, _arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult> {
+        let sha = self.github_client.get_latest_commit_sha().await?;
 
         let response_text = format!("Latest commit SHA: {}", sha);
 
@@ -129,14 +120,11 @@ impl NotionRepoResourceHandler {
     }
 }
 
+#[async_trait::async_trait]
 impl ResourceHandler for NotionRepoResourceHandler {
-    fn read(&self, uri: &str) -> Result<ReadResourceResult> {
-        let rt = tokio::runtime::Runtime::new()?;
-        
+    async fn read(&self, uri: &str) -> Result<ReadResourceResult> {
         if uri == mcp_constants::RESOURCE_REPO_INFO {
-            let sha = rt.block_on(async {
-                self.github_client.get_latest_commit_sha().await
-            })?;
+            let sha = self.github_client.get_latest_commit_sha().await?;
             
             let info = utils::format_repository_info(
                 github_constants::DEFAULT_OWNER,
@@ -299,10 +287,10 @@ mod tests {
         assert_eq!(sha, "abc123def456");
     }
 
-    #[test]
-    fn test_notion_repo_resource_handler_invalid_uri() {
+    #[tokio::test]
+    async fn test_notion_repo_resource_handler_invalid_uri() {
         let handler = NotionRepoResourceHandler::new();
-        let result = handler.read("invalid://uri");
+        let result = handler.read("invalid://uri").await;
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Unknown resource URI"));
     }

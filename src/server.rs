@@ -12,12 +12,14 @@ pub struct McpServer {
     resource_handlers: HashMap<String, Box<dyn ResourceHandler + Send + Sync>>,
 }
 
-pub trait ToolHandler {
-    fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult>;
+#[async_trait::async_trait]
+pub trait ToolHandler: Send + Sync {
+    async fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<CallToolResult>;
 }
 
-pub trait ResourceHandler {
-    fn read(&self, uri: &str) -> Result<ReadResourceResult>;
+#[async_trait::async_trait]
+pub trait ResourceHandler: Send + Sync {
+    async fn read(&self, uri: &str) -> Result<ReadResourceResult>;
 }
 
 impl McpServer {
@@ -137,7 +139,7 @@ impl McpServer {
             }
             McpRequest::CallTool { id, params } => {
                 if let Some(handler) = self.tool_handlers.get(&params.name) {
-                    match handler.call(params.arguments) {
+                    match handler.call(params.arguments).await {
                         Ok(result) => Ok(McpResponse::CallTool { 
                             jsonrpc: "2.0".to_string(),
                             id, 
@@ -161,7 +163,7 @@ impl McpServer {
             }
             McpRequest::ReadResource { id, params } => {
                 if let Some(handler) = self.resource_handlers.get(&params.uri) {
-                    match handler.read(&params.uri) {
+                    match handler.read(&params.uri).await {
                         Ok(result) => Ok(McpResponse::ReadResource { 
                             jsonrpc: "2.0".to_string(),
                             id, 
