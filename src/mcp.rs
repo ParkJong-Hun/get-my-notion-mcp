@@ -57,8 +57,10 @@ pub enum McpNotification {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InitializeParams {
+    #[serde(alias = "protocolVersion")]
     pub protocol_version: String,
     pub capabilities: ClientCapabilities,
+    #[serde(alias = "clientInfo")]
     pub client_info: Option<ClientInfo>,
 }
 
@@ -79,7 +81,7 @@ pub struct SamplingCapability {}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientInfo {
     pub name: String,
-    pub version: String,
+    pub version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,8 +132,10 @@ pub enum McpResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InitializeResult {
+    #[serde(rename = "protocolVersion")]
     pub protocol_version: String,
     pub capabilities: ServerCapabilities,
+    #[serde(rename = "serverInfo")]
     pub server_info: ServerInfo,
 }
 
@@ -143,12 +147,14 @@ pub struct ServerCapabilities {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolsCapability {
+    #[serde(rename = "listChanged")]
     pub list_changed: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourcesCapability {
     pub subscribe: Option<bool>,
+    #[serde(rename = "listChanged")]
     pub list_changed: Option<bool>,
 }
 

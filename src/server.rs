@@ -60,8 +60,13 @@ impl McpServer {
             }
 
             // First try to handle as notification (no response needed)
-            if let Ok(_notification) = serde_json::from_str::<crate::mcp::McpNotification>(&line) {
-                // Handle notification (no response needed)
+            if let Ok(notification) = serde_json::from_str::<crate::mcp::McpNotification>(&line) {
+                match notification {
+                    McpNotification::Initialized => {
+                        // Server is now ready to handle requests
+                        eprintln!("Server initialized successfully");
+                    }
+                }
                 continue;
             }
             

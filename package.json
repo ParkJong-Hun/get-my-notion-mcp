@@ -1,6 +1,6 @@
 {
   "name": "@parkjonghun/get-my-notion-mcp",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "MCP server for accessing my-notion GitHub repository data",
   "main": "index.js",
   "bin": {
