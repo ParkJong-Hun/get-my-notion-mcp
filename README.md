@@ -11,7 +11,7 @@ A Model Context Protocol (MCP) server that provides access to the [my-notion Git
 
 ## 🚀 Quick Start
 
-### Install
+### Install via npm
 
 ```bash
 npm install -g @parkjonghun/get-my-notion-mcp
@@ -54,23 +54,47 @@ Once configured, try these commands:
 
 ## 🔧 Alternative Installation Methods
 
-### Direct Binary
+### Option 1: Build from Source (If npm install fails)
+
 ```bash
-# Build from source
+# Clone and build
 git clone https://github.com/ParkJong-Hun/get-my-notion-mcp.git
 cd get-my-notion-mcp
+npm run build
+npm link
+```
+
+**Then use:**
+```bash
+# Claude Code
+claude mcp add get-my-notion-mcp -- get-my-notion-mcp
+
+# Cursor
+{
+  "mcpServers": {
+    "get-my-notion-mcp": {
+      "command": "get-my-notion-mcp"
+    }
+  }
+}
+```
+
+### Option 2: Direct Binary Path
+
+```bash
+# Build
 cargo build --release
 
-# Use directly
+# Use full path
 ./target/release/get-my-notion-mcp
 ```
 
-### Configuration for Direct Binary
+**Configuration:**
 ```json
 {
   "mcpServers": {
     "get-my-notion-mcp": {
-      "command": "/path/to/get-my-notion-mcp"
+      "command": "/full/path/to/target/release/get-my-notion-mcp"
     }
   }
 }
