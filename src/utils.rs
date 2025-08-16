@@ -111,7 +111,7 @@ pub fn create_server_info() -> ServerInfo {
 }
 
 // Common error creation helpers
-pub fn create_method_not_found_error(id: String, method_name: &str) -> McpResponse {
+pub fn create_method_not_found_error(id: RequestId, method_name: &str) -> McpResponse {
     McpResponse::Error {
         id,
         error: McpError {
@@ -122,7 +122,7 @@ pub fn create_method_not_found_error(id: String, method_name: &str) -> McpRespon
     }
 }
 
-pub fn create_internal_error(id: String, message: &str) -> McpResponse {
+pub fn create_internal_error(id: RequestId, message: &str) -> McpResponse {
     McpResponse::Error {
         id,
         error: McpError {

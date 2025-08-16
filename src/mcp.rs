@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RequestId {
+    String(String),
+    Number(i64),
+    Null,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tool {
     pub name: String,
     pub description: String,
@@ -21,21 +29,21 @@ pub struct Resource {
 pub enum McpRequest {
     #[serde(rename = "initialize")]
     Initialize {
-        id: String,
+        id: RequestId,
         params: InitializeParams,
     },
     #[serde(rename = "tools/list")]
-    ListTools { id: String },
+    ListTools { id: RequestId },
     #[serde(rename = "tools/call")]
     CallTool {
-        id: String,
+        id: RequestId,
         params: CallToolParams,
     },
     #[serde(rename = "resources/list")]
-    ListResources { id: String },
+    ListResources { id: RequestId },
     #[serde(rename = "resources/read")]
     ReadResource {
-        id: String,
+        id: RequestId,
         params: ReadResourceParams,
     },
 }
@@ -83,31 +91,31 @@ pub struct ReadResourceParams {
 pub enum McpResponse {
     #[serde(rename = "initialize")]
     Initialize {
-        id: String,
+        id: RequestId,
         result: InitializeResult,
     },
     #[serde(rename = "tools/list")]
     ListTools {
-        id: String,
+        id: RequestId,
         result: ListToolsResult,
     },
     #[serde(rename = "tools/call")]
     CallTool {
-        id: String,
+        id: RequestId,
         result: CallToolResult,
     },
     #[serde(rename = "resources/list")]
     ListResources {
-        id: String,
+        id: RequestId,
         result: ListResourcesResult,
     },
     #[serde(rename = "resources/read")]
     ReadResource {
-        id: String,
+        id: RequestId,
         result: ReadResourceResult,
     },
     Error {
-        id: String,
+        id: RequestId,
         error: McpError,
     },
 }
