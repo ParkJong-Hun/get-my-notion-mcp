@@ -77,7 +77,7 @@ fn test_mcp_response_serialization() {
             },
             server_info: ServerInfo {
                 name: "get-my-notion-mcp".to_string(),
-                version: "0.1.2".to_string(),
+                version: "0.1.3".to_string(),
             },
         },
     };

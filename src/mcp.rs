@@ -52,7 +52,7 @@ pub enum McpRequest {
 pub struct InitializeParams {
     pub protocol_version: String,
     pub capabilities: ClientCapabilities,
-    pub client_info: ClientInfo,
+    pub client_info: Option<ClientInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
