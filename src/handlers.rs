@@ -1,6 +1,8 @@
+use crate::constants::{github as github_constants, mcp as mcp_constants, errors};
 use crate::github::GitHubClient;
 use crate::mcp::*;
 use crate::server::{ResourceHandler, ToolHandler};
+use crate::utils;
 use anyhow::Result;
 use std::collections::HashMap;
 
@@ -11,7 +13,7 @@ pub struct ListFilesHandler {
 impl ListFilesHandler {
     pub fn new() -> Self {
         Self {
-            github_client: GitHubClient::new("ParkJong-Hun".to_string(), "my-notion".to_string()),
+            github_client: GitHubClient::new_default(),
         }
     }
 
@@ -26,29 +28,14 @@ impl ToolHandler for ListFilesHandler {
         
         let path = arguments
             .as_ref()
-            .and_then(|args| args.get("path"))
+            .and_then(|args| args.get(mcp_constants::PARAM_PATH))
             .and_then(|v| v.as_str());
 
         let files = rt.block_on(async {
             self.github_client.list_files(path).await
         })?;
 
-        let mut content = String::new();
-        content.push_str("Files in repository:\n\n");
-        
-        for file in files {
-            content.push_str(&format!(
-                "- **{}** ({})\n  Path: {}\n  Type: {}\n",
-                file.name, 
-                file.sha[..7].to_string(),
-                file.path,
-                file.file_type
-            ));
-            if let Some(size) = file.size {
-                content.push_str(&format!("  Size: {} bytes\n", size));
-            }
-            content.push('\n');
-        }
+        let content = utils::format_file_info(&files);
 
         Ok(CallToolResult {
             content: vec![ToolContent::Text { text: content }],
@@ -63,7 +50,7 @@ pub struct GetFileContentHandler {
 impl GetFileContentHandler {
     pub fn new() -> Self {
         Self {
-            github_client: GitHubClient::new("ParkJong-Hun".to_string(), "my-notion".to_string()),
+            github_client: GitHubClient::new_default(),
         }
     }
 
@@ -78,19 +65,15 @@ impl ToolHandler for GetFileContentHandler {
         
         let path = arguments
             .as_ref()
-            .and_then(|args| args.get("path"))
+            .and_then(|args| args.get(mcp_constants::PARAM_PATH))
             .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow::anyhow!("Path parameter is required"))?;
+            .ok_or_else(|| anyhow::anyhow!(errors::PATH_REQUIRED))?;
 
         let content = rt.block_on(async {
             self.github_client.get_file_content(path).await
         })?;
 
-        let response_text = format!(
-            "Content of file: {}\n\n```\n{}\n```",
-            path,
-            content
-        );
+        let response_text = utils::format_file_content(path, &content);
 
         Ok(CallToolResult {
             content: vec![ToolContent::Text { text: response_text }],
@@ -105,7 +88,7 @@ pub struct GetLatestCommitHandler {
 impl GetLatestCommitHandler {
     pub fn new() -> Self {
         Self {
-            github_client: GitHubClient::new("ParkJong-Hun".to_string(), "my-notion".to_string()),
+            github_client: GitHubClient::new_default(),
         }
     }
 
@@ -137,7 +120,7 @@ pub struct NotionRepoResourceHandler {
 impl NotionRepoResourceHandler {
     pub fn new() -> Self {
         Self {
-            github_client: GitHubClient::new("ParkJong-Hun".to_string(), "my-notion".to_string()),
+            github_client: GitHubClient::new_default(),
         }
     }
 
@@ -150,14 +133,15 @@ impl ResourceHandler for NotionRepoResourceHandler {
     fn read(&self, uri: &str) -> Result<ReadResourceResult> {
         let rt = tokio::runtime::Runtime::new()?;
         
-        if uri == "notion://repo/info" {
+        if uri == mcp_constants::RESOURCE_REPO_INFO {
             let sha = rt.block_on(async {
                 self.github_client.get_latest_commit_sha().await
             })?;
             
-            let info = format!(
-                "Repository: ParkJong-Hun/my-notion\nLatest commit: {}\nAccess via: https://github.com/ParkJong-Hun/my-notion",
-                sha
+            let info = utils::format_repository_info(
+                github_constants::DEFAULT_OWNER,
+                github_constants::DEFAULT_REPO,
+                &sha
             );
             
             Ok(ReadResourceResult {
@@ -167,7 +151,7 @@ impl ResourceHandler for NotionRepoResourceHandler {
                 }],
             })
         } else {
-            Err(anyhow::anyhow!("Unknown resource URI: {}", uri))
+            Err(anyhow::anyhow!("{}: {}", errors::UNKNOWN_RESOURCE_URI, uri))
         }
     }
 }

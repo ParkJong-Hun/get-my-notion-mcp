@@ -1,4 +1,6 @@
+use crate::constants::{mcp as mcp_constants, errors, rpc_errors};
 use crate::mcp::*;
+use crate::utils;
 use anyhow::Result;
 use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
@@ -79,20 +81,9 @@ impl McpServer {
         match request {
             McpRequest::Initialize { id, params: _ } => {
                 let result = InitializeResult {
-                    protocol_version: "2024-11-05".to_string(),
-                    capabilities: ServerCapabilities {
-                        tools: Some(ToolsCapability {
-                            list_changed: Some(false),
-                        }),
-                        resources: Some(ResourcesCapability {
-                            subscribe: Some(false),
-                            list_changed: Some(false),
-                        }),
-                    },
-                    server_info: ServerInfo {
-                        name: "get-my-notion-mcp".to_string(),
-                        version: "0.1.0".to_string(),
-                    },
+                    protocol_version: mcp_constants::PROTOCOL_VERSION.to_string(),
+                    capabilities: utils::create_server_capabilities(),
+                    server_info: utils::create_server_info(),
                 };
                 Ok(McpResponse::Initialize { id, result })
             }
@@ -106,24 +97,10 @@ impl McpServer {
                 if let Some(handler) = self.tool_handlers.get(&params.name) {
                     match handler.call(params.arguments) {
                         Ok(result) => Ok(McpResponse::CallTool { id, result }),
-                        Err(e) => Ok(McpResponse::Error {
-                            id,
-                            error: McpError {
-                                code: -32603,
-                                message: format!("Tool execution failed: {}", e),
-                                data: None,
-                            },
-                        }),
+                        Err(e) => Ok(utils::create_internal_error(id, &format!("{}: {}", errors::TOOL_EXECUTION_FAILED, e))),
                     }
                 } else {
-                    Ok(McpResponse::Error {
-                        id,
-                        error: McpError {
-                            code: -32601,
-                            message: format!("Tool '{}' not found", params.name),
-                            data: None,
-                        },
-                    })
+                    Ok(utils::create_method_not_found_error(id, &params.name))
                 }
             }
             McpRequest::ListResources { id } => {
@@ -136,24 +113,10 @@ impl McpServer {
                 if let Some(handler) = self.resource_handlers.get(&params.uri) {
                     match handler.read(&params.uri) {
                         Ok(result) => Ok(McpResponse::ReadResource { id, result }),
-                        Err(e) => Ok(McpResponse::Error {
-                            id,
-                            error: McpError {
-                                code: -32603,
-                                message: format!("Resource read failed: {}", e),
-                                data: None,
-                            },
-                        }),
+                        Err(e) => Ok(utils::create_internal_error(id, &format!("{}: {}", errors::RESOURCE_READ_FAILED, e))),
                     }
                 } else {
-                    Ok(McpResponse::Error {
-                        id,
-                        error: McpError {
-                            code: -32601,
-                            message: format!("Resource '{}' not found", params.uri),
-                            data: None,
-                        },
-                    })
+                    Ok(utils::create_method_not_found_error(id, &params.uri))
                 }
             }
         }

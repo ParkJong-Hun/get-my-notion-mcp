@@ -1,3 +1,5 @@
+use crate::constants::github as constants;
+use crate::utils;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use base64::Engine;
@@ -37,6 +39,10 @@ impl GitHubClient {
             repo,
         }
     }
+    
+    pub fn new_default() -> Self {
+        Self::new(constants::DEFAULT_OWNER.to_string(), constants::DEFAULT_REPO.to_string())
+    }
 
     pub fn new_with_client(owner: String, repo: String, client: reqwest::Client) -> Self {
         Self {
@@ -48,21 +54,20 @@ impl GitHubClient {
 
     pub async fn list_files(&self, path: Option<&str>) -> Result<Vec<GitHubFile>> {
         let path = path.unwrap_or("");
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/contents/{}",
-            self.owner, self.repo, path
-        );
+        let url = utils::build_github_contents_url(&self.owner, &self.repo, path);
+        let (header_name, header_value) = utils::get_user_agent_header();
 
         let response = self
             .client
             .get(&url)
-            .header("User-Agent", "get-my-notion-mcp")
+            .header(header_name, header_value)
             .send()
             .await?;
 
         if !response.status().is_success() {
             return Err(anyhow!(
-                "GitHub API request failed: {}",
+                "{}: {}",
+                crate::constants::errors::GITHUB_API_FAILED,
                 response.status()
             ));
         }
@@ -72,28 +77,27 @@ impl GitHubClient {
     }
 
     pub async fn get_file_content(&self, path: &str) -> Result<String> {
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/contents/{}",
-            self.owner, self.repo, path
-        );
+        let url = utils::build_github_contents_url(&self.owner, &self.repo, path);
+        let (header_name, header_value) = utils::get_user_agent_header();
 
         let response = self
             .client
             .get(&url)
-            .header("User-Agent", "get-my-notion-mcp")
+            .header(header_name, header_value)
             .send()
             .await?;
 
         if !response.status().is_success() {
             return Err(anyhow!(
-                "GitHub API request failed: {}",
+                "{}: {}",
+                crate::constants::errors::GITHUB_API_FAILED,
                 response.status()
             ));
         }
 
         let content: GitHubContent = response.json().await?;
         
-        if content.encoding == "base64" {
+        if content.encoding == constants::BASE64_ENCODING {
             let decoded = base64::engine::general_purpose::STANDARD
                 .decode(&content.content.replace('\n', ""))?;
             Ok(String::from_utf8(decoded)?)
@@ -103,21 +107,20 @@ impl GitHubClient {
     }
 
     pub async fn get_latest_commit_sha(&self) -> Result<String> {
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/commits/main",
-            self.owner, self.repo
-        );
+        let url = utils::build_github_commits_url(&self.owner, &self.repo, constants::DEFAULT_BRANCH);
+        let (header_name, header_value) = utils::get_user_agent_header();
 
         let response = self
             .client
             .get(&url)
-            .header("User-Agent", "get-my-notion-mcp")
+            .header(header_name, header_value)
             .send()
             .await?;
 
         if !response.status().is_success() {
             return Err(anyhow!(
-                "GitHub API request failed: {}",
+                "{}: {}",
+                crate::constants::errors::GITHUB_API_FAILED,
                 response.status()
             ));
         }
@@ -125,7 +128,7 @@ impl GitHubClient {
         let commit: serde_json::Value = response.json().await?;
         let sha = commit["sha"]
             .as_str()
-            .ok_or_else(|| anyhow!("Could not extract commit SHA"))?;
+            .ok_or_else(|| anyhow!(crate::constants::errors::COMMIT_SHA_EXTRACT_FAILED))?;
         
         Ok(sha.to_string())
     }
