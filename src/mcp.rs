@@ -49,6 +49,13 @@ pub enum McpRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "method")]
+pub enum McpNotification {
+    #[serde(rename = "initialized")]
+    Initialized,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InitializeParams {
     pub protocol_version: String,
     pub capabilities: ClientCapabilities,

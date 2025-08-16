@@ -59,6 +59,13 @@ impl McpServer {
                 continue;
             }
 
+            // First try to handle as notification (no response needed)
+            if let Ok(_notification) = serde_json::from_str::<crate::mcp::McpNotification>(&line) {
+                // Handle notification (no response needed)
+                continue;
+            }
+            
+            // If not a notification, handle as a request
             match self.handle_request(&line).await {
                 Ok(response) => {
                     let response_json = serde_json::to_string(&response)?;
