@@ -113,6 +113,7 @@ pub fn create_server_info() -> ServerInfo {
 // Common error creation helpers
 pub fn create_method_not_found_error(id: RequestId, method_name: &str) -> McpResponse {
     McpResponse::Error {
+        jsonrpc: "2.0".to_string(),
         id,
         error: McpError {
             code: crate::constants::rpc_errors::METHOD_NOT_FOUND,
@@ -124,9 +125,22 @@ pub fn create_method_not_found_error(id: RequestId, method_name: &str) -> McpRes
 
 pub fn create_internal_error(id: RequestId, message: &str) -> McpResponse {
     McpResponse::Error {
+        jsonrpc: "2.0".to_string(),
         id,
         error: McpError {
             code: crate::constants::rpc_errors::INTERNAL_ERROR,
+            message: message.to_string(),
+            data: None,
+        },
+    }
+}
+
+pub fn create_parse_error(id: RequestId, message: &str) -> McpResponse {
+    McpResponse::Error {
+        jsonrpc: "2.0".to_string(),
+        id,
+        error: McpError {
+            code: crate::constants::rpc_errors::PARSE_ERROR,
             message: message.to_string(),
             data: None,
         },

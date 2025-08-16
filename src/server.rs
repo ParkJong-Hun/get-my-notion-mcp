@@ -1,4 +1,4 @@
-use crate::constants::{mcp as mcp_constants, errors, rpc_errors};
+use crate::constants::{mcp as mcp_constants, errors};
 use crate::mcp::*;
 use crate::utils;
 use anyhow::Result;
@@ -67,7 +67,29 @@ impl McpServer {
                     writer.flush().await?;
                 }
                 Err(e) => {
-                    eprintln!("Error handling request: {}", e);
+                    // Try to parse the request to get the ID for error response
+                    let error_response = if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
+                        if let Some(id) = value.get("id") {
+                            let request_id = if id.is_string() {
+                                RequestId::String(id.as_str().unwrap_or("unknown").to_string())
+                            } else if id.is_number() {
+                                RequestId::Number(id.as_i64().unwrap_or(0))
+                            } else {
+                                RequestId::Null
+                            };
+                            utils::create_parse_error(request_id, &format!("Error handling request: {}", e))
+                        } else {
+                            utils::create_parse_error(RequestId::Null, &format!("Error handling request: {}", e))
+                        }
+                    } else {
+                        utils::create_parse_error(RequestId::Null, &format!("Error handling request: {}", e))
+                    };
+                    
+                    if let Ok(response_json) = serde_json::to_string(&error_response) {
+                        let _ = writer.write_all(response_json.as_bytes()).await;
+                        let _ = writer.write_all(b"\n").await;
+                        let _ = writer.flush().await;
+                    }
                 }
             }
         }
@@ -85,18 +107,30 @@ impl McpServer {
                     capabilities: utils::create_server_capabilities(),
                     server_info: utils::create_server_info(),
                 };
-                Ok(McpResponse::Initialize { id, result })
+                Ok(McpResponse::Initialize { 
+                    jsonrpc: "2.0".to_string(),
+                    id, 
+                    result 
+                })
             }
             McpRequest::ListTools { id } => {
                 let result = ListToolsResult {
                     tools: self.tools.clone(),
                 };
-                Ok(McpResponse::ListTools { id, result })
+                Ok(McpResponse::ListTools { 
+                    jsonrpc: "2.0".to_string(),
+                    id, 
+                    result 
+                })
             }
             McpRequest::CallTool { id, params } => {
                 if let Some(handler) = self.tool_handlers.get(&params.name) {
                     match handler.call(params.arguments) {
-                        Ok(result) => Ok(McpResponse::CallTool { id, result }),
+                        Ok(result) => Ok(McpResponse::CallTool { 
+                            jsonrpc: "2.0".to_string(),
+                            id, 
+                            result 
+                        }),
                         Err(e) => Ok(utils::create_internal_error(id, &format!("{}: {}", errors::TOOL_EXECUTION_FAILED, e))),
                     }
                 } else {
@@ -107,12 +141,20 @@ impl McpServer {
                 let result = ListResourcesResult {
                     resources: self.resources.clone(),
                 };
-                Ok(McpResponse::ListResources { id, result })
+                Ok(McpResponse::ListResources { 
+                    jsonrpc: "2.0".to_string(),
+                    id, 
+                    result 
+                })
             }
             McpRequest::ReadResource { id, params } => {
                 if let Some(handler) = self.resource_handlers.get(&params.uri) {
                     match handler.read(&params.uri) {
-                        Ok(result) => Ok(McpResponse::ReadResource { id, result }),
+                        Ok(result) => Ok(McpResponse::ReadResource { 
+                            jsonrpc: "2.0".to_string(),
+                            id, 
+                            result 
+                        }),
                         Err(e) => Ok(utils::create_internal_error(id, &format!("{}: {}", errors::RESOURCE_READ_FAILED, e))),
                     }
                 } else {

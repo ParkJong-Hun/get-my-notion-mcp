@@ -87,34 +87,35 @@ pub struct ReadResourceParams {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "method")]
+#[serde(untagged)]
 pub enum McpResponse {
-    #[serde(rename = "initialize")]
     Initialize {
+        jsonrpc: String,
         id: RequestId,
         result: InitializeResult,
     },
-    #[serde(rename = "tools/list")]
     ListTools {
+        jsonrpc: String,
         id: RequestId,
         result: ListToolsResult,
     },
-    #[serde(rename = "tools/call")]
     CallTool {
+        jsonrpc: String,
         id: RequestId,
         result: CallToolResult,
     },
-    #[serde(rename = "resources/list")]
     ListResources {
+        jsonrpc: String,
         id: RequestId,
         result: ListResourcesResult,
     },
-    #[serde(rename = "resources/read")]
     ReadResource {
+        jsonrpc: String,
         id: RequestId,
         result: ReadResourceResult,
     },
     Error {
+        jsonrpc: String,
         id: RequestId,
         error: McpError,
     },

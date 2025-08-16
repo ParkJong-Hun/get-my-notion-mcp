@@ -12,7 +12,7 @@ pub mod github {
 pub mod mcp {
     pub const PROTOCOL_VERSION: &str = "2025-08-16";
     pub const SERVER_NAME: &str = "get-my-notion-mcp";
-    pub const SERVER_VERSION: &str = "0.1.2";
+    pub const SERVER_VERSION: &str = "0.1.5";
     pub const SERVER_DESCRIPTION: &str = "MCP server for accessing my-notion GitHub repository";
     
     // Tool names
@@ -42,6 +42,7 @@ pub mod errors {
 
 // JSON-RPC error codes
 pub mod rpc_errors {
+    pub const PARSE_ERROR: i32 = -32700;
     pub const METHOD_NOT_FOUND: i32 = -32601;
     pub const INTERNAL_ERROR: i32 = -32603;
 }
