@@ -1,46 +1,17 @@
 mod mcp;
 mod server;
+mod github;
+mod handlers;
 
 use anyhow::Result;
 use clap::Parser;
-use server::{McpServer, ResourceHandler, ToolHandler};
-use std::collections::HashMap;
+use server::McpServer;
+use handlers::*;
 
 #[derive(Parser)]
 #[command(name = "get-my-notion-mcp")]
-#[command(about = "A Model Context Protocol server")]
+#[command(about = "MCP server for accessing my-notion GitHub repository")]
 struct Cli {}
-
-struct EchoToolHandler;
-
-impl ToolHandler for EchoToolHandler {
-    fn call(&self, arguments: Option<HashMap<String, serde_json::Value>>) -> Result<mcp::CallToolResult> {
-        let message = arguments
-            .as_ref()
-            .and_then(|args| args.get("message"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Hello, World!");
-
-        Ok(mcp::CallToolResult {
-            content: vec![mcp::ToolContent::Text {
-                text: format!("Echo: {}", message),
-            }],
-        })
-    }
-}
-
-struct HelloResourceHandler;
-
-impl ResourceHandler for HelloResourceHandler {
-    fn read(&self, _uri: &str) -> Result<mcp::ReadResourceResult> {
-        Ok(mcp::ReadResourceResult {
-            contents: vec![mcp::ResourceContent::Text {
-                uri: "hello://world".to_string(),
-                text: "Hello from the MCP server!".to_string(),
-            }],
-        })
-    }
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -48,29 +19,56 @@ async fn main() -> Result<()> {
 
     let mut server = McpServer::new();
 
-    let echo_tool = mcp::Tool {
-        name: "echo".to_string(),
-        description: "Echo a message back".to_string(),
+    // Add tools for GitHub repository access
+    let list_files_tool = mcp::Tool {
+        name: "list_files".to_string(),
+        description: "List files in the my-notion GitHub repository".to_string(),
         input_schema: serde_json::json!({
             "type": "object",
             "properties": {
-                "message": {
+                "path": {
                     "type": "string",
-                    "description": "The message to echo"
+                    "description": "Optional path within the repository (default: root)"
                 }
             }
         }),
     };
 
-    let hello_resource = mcp::Resource {
-        uri: "hello://world".to_string(),
-        name: "Hello World".to_string(),
-        description: Some("A simple hello world resource".to_string()),
+    let get_file_content_tool = mcp::Tool {
+        name: "get_file_content".to_string(),
+        description: "Get content of a specific file from the my-notion repository".to_string(),
+        input_schema: serde_json::json!({
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path to the file within the repository"
+                }
+            },
+            "required": ["path"]
+        }),
+    };
+
+    let get_latest_commit_tool = mcp::Tool {
+        name: "get_latest_commit".to_string(),
+        description: "Get the latest commit SHA from the my-notion repository".to_string(),
+        input_schema: serde_json::json!({
+            "type": "object"
+        }),
+    };
+
+    // Add resource for repository information
+    let repo_info_resource = mcp::Resource {
+        uri: "notion://repo/info".to_string(),
+        name: "My Notion Repository Info".to_string(),
+        description: Some("Information about the my-notion GitHub repository".to_string()),
         mime_type: Some("text/plain".to_string()),
     };
 
-    server.add_tool(echo_tool, EchoToolHandler);
-    server.add_resource(hello_resource, HelloResourceHandler);
+    server.add_tool(list_files_tool, ListFilesHandler::new());
+    server.add_tool(get_file_content_tool, GetFileContentHandler::new());
+    server.add_tool(get_latest_commit_tool, GetLatestCommitHandler::new());
+    server.add_resource(repo_info_resource, NotionRepoResourceHandler::new());
 
     server.run().await
 }
