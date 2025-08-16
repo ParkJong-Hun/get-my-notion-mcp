@@ -1,0 +1,40 @@
+# Rust source files
+src/
+tests/
+Cargo.toml
+Cargo.lock
+
+# Development files
+.git/
+.github/
+.gitignore
+*.log
+*.tmp
+
+# Build artifacts (except release binary)
+target/debug/
+target/deps/
+target/.rustc_info.json
+target/CACHEDIR.TAG
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Keep only the release binary and npm-related files
+!target/release/get-my-notion-mcp
+!target/release/get-my-notion-mcp.exe
+!bin/
+!package.json
+!README.md
+!LICENSE

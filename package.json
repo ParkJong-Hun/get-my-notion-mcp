@@ -1,0 +1,53 @@
+{
+  "name": "@parkjonghun/get-my-notion-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for accessing my-notion GitHub repository data",
+  "main": "index.js",
+  "bin": {
+    "get-my-notion-mcp": "./bin/get-my-notion-mcp"
+  },
+  "scripts": {
+    "build": "cargo build --release",
+    "prepare": "npm run build",
+    "test": "cargo test",
+    "start": "./bin/get-my-notion-mcp"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "github",
+    "notion",
+    "claude",
+    "cursor",
+    "ai-tools"
+  ],
+  "author": "ParkJong-Hun",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ParkJong-Hun/get-my-notion-mcp.git"
+  },
+  "homepage": "https://github.com/ParkJong-Hun/get-my-notion-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/ParkJong-Hun/get-my-notion-mcp/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "bin/",
+    "target/release/get-my-notion-mcp",
+    "target/release/get-my-notion-mcp.exe",
+    "README.md",
+    "LICENSE"
+  ]
+}

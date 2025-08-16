@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+// Determine the platform and architecture
+const platform = process.platform;
+const arch = process.arch;
+
+// Map Node.js architecture names to Rust target names
+const archMap = {
+  'x64': 'x86_64',
+  'arm64': 'aarch64'
+};
+
+const rustArch = archMap[arch] || arch;
+
+// Determine the binary name based on platform
+let binaryName = 'get-my-notion-mcp';
+if (platform === 'win32') {
+  binaryName += '.exe';
+}
+
+// Try to find the binary in different locations
+const possiblePaths = [
+  // When installed via npm
+  path.join(__dirname, '..', 'target', 'release', binaryName),
+  // When running locally
+  path.join(__dirname, '..', 'target', 'release', binaryName),
+  // Alternative location
+  path.join(__dirname, binaryName)
+];
+
+let binaryPath = null;
+
+for (const possiblePath of possiblePaths) {
+  if (fs.existsSync(possiblePath)) {
+    binaryPath = possiblePath;
+    break;
+  }
+}
+
+if (!binaryPath) {
+  console.error('Error: get-my-notion-mcp binary not found.');
+  console.error('Please ensure the package is properly built with: npm run build');
+  console.error('Searched paths:');
+  possiblePaths.forEach(p => console.error(`  - ${p}`));
+  process.exit(1);
+}
+
+// Ensure the binary is executable
+try {
+  fs.chmodSync(binaryPath, '755');
+} catch (err) {
+  // Ignore permission errors on Windows
+  if (platform !== 'win32') {
+    console.error('Warning: Could not make binary executable:', err.message);
+  }
+}
+
+// Spawn the Rust binary with all arguments
+const child = spawn(binaryPath, process.argv.slice(2), {
+  stdio: 'inherit',
+  shell: false
+});
+
+// Handle process termination
+child.on('close', (code) => {
+  process.exit(code);
+});
+
+child.on('error', (err) => {
+  console.error('Error executing get-my-notion-mcp:', err.message);
+  process.exit(1);
+});
+
+// Handle signals
+process.on('SIGINT', () => {
+  child.kill('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  child.kill('SIGTERM');
+});

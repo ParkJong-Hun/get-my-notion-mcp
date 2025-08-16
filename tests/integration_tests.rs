@@ -41,7 +41,7 @@ fn test_mcp_request_serialization() {
     let initialize_request = McpRequest::Initialize {
         id: "1".to_string(),
         params: InitializeParams {
-            protocol_version: "2024-11-05".to_string(),
+            protocol_version: "2025-08-16".to_string(),
             capabilities: ClientCapabilities {
                 roots: Some(RootsCapability {
                     list_changed: Some(false),
@@ -65,7 +65,7 @@ fn test_mcp_response_serialization() {
     let initialize_response = McpResponse::Initialize {
         id: "1".to_string(),
         result: InitializeResult {
-            protocol_version: "2024-11-05".to_string(),
+            protocol_version: "2025-08-16".to_string(),
             capabilities: ServerCapabilities {
                 tools: Some(ToolsCapability {
                     list_changed: Some(false),
@@ -84,7 +84,7 @@ fn test_mcp_response_serialization() {
 
     let serialized = serde_json::to_string(&initialize_response).unwrap();
     assert!(serialized.contains("get-my-notion-mcp"));
-    assert!(serialized.contains("2024-11-05"));
+    assert!(serialized.contains("2025-08-16"));
 }
 
 #[test]

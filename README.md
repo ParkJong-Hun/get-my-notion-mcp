@@ -9,47 +9,72 @@ A Model Context Protocol (MCP) server that provides access to the [my-notion Git
 - 🔄 **Latest Commit**: Get the most recent commit SHA
 - 🔗 **Repository Info**: Access repository metadata
 
-## Installation
+## Quick Start
 
-### Prerequisites
-
-- Rust 1.70+ installed
-- Internet connection for GitHub API access
-
-### Build from Source
+### Option 1: Install via npm (Recommended)
 
 ```bash
-git clone <your-repo-url>
-cd get-my-notion-mcp
-cargo build --release
+npm install -g @parkjonghun/get-my-notion-mcp
 ```
 
-## Usage
+### Option 2: Build from Source
+
+```bash
+git clone https://github.com/ParkJong-Hun/get-my-notion-mcp.git
+cd get-my-notion-mcp
+npm run build
+```
+
+## Configuration
 
 ### With Claude Code
 
-1. **Start the MCP server:**
-   ```bash
-   cargo run
-   ```
+Add the MCP server using the Claude Code CLI:
 
-2. **Configure Claude Code** to use this MCP server by adding it to your MCP configuration.
+```bash
+claude mcp add get-my-notion-mcp -- npx -y @parkjonghun/get-my-notion-mcp
+```
 
-3. **Use the tools** in your conversation with Claude:
-   - "List all files in the repository"
-   - "Show me the content of README.md"
-   - "What's the latest commit?"
+Or manually add to your configuration:
+
+```bash
+# Add the server
+claude mcp add get-my-notion-mcp
+
+# Configure the command
+npx -y @parkjonghun/get-my-notion-mcp
+```
 
 ### With Cursor
 
-1. **Build the server:**
-   ```bash
-   cargo build --release
-   ```
+Add the following configuration to your Cursor settings:
 
-2. **Configure Cursor** to connect to the MCP server.
+```json
+{
+  "mcpServers": {
+    "get-my-notion-mcp": {
+      "command": "npx",
+      "args": ["-y", "@parkjonghun/get-my-notion-mcp"]
+    }
+  }
+}
+```
 
-3. **Access repository data** through Cursor's AI features.
+**Location of Cursor settings:**
+
+- **macOS**: `~/Library/Application Support/Cursor/User/settings.json`
+- **Windows**: `%APPDATA%\Cursor\User\settings.json`
+- **Linux**: `~/.config/Cursor/User/settings.json`
+
+## Usage Examples
+
+Once configured, you can use these commands in Claude Code or Cursor:
+
+- **"List all files in the my-notion repository"**
+- **"Show me the content of README.md from the repository"**
+- **"What's the latest commit in the my-notion repo?"**
+- **"Browse the src directory structure"**
+- **"Get repository information"**
 
 ## Available Tools
 
@@ -106,10 +131,49 @@ This server uses the GitHub REST API to fetch repository data. No authentication
 
 ## Development
 
+### Prerequisites
+
+- **Rust 1.70+** for building the binary
+- **Node.js 16+** for npm packaging
+- Internet connection for GitHub API access
+
+### Building Locally
+
+```bash
+# Clone the repository
+git clone https://github.com/ParkJong-Hun/get-my-notion-mcp.git
+cd get-my-notion-mcp
+
+# Install dependencies and build
+npm install
+npm run build
+
+# Test the build
+npm test
+
+# Link for local testing
+npm link
+get-my-notion-mcp --help
+```
+
 ### Running Tests
 
 ```bash
+# Run Rust tests
 cargo test
+
+# Test npm package
+npm test
+```
+
+### Publishing to npm
+
+```bash
+# Build for release
+npm run build
+
+# Publish (requires npm login)
+npm publish --access public
 ```
 
 ### Test Coverage
@@ -124,19 +188,25 @@ The project includes comprehensive tests:
 
 ```
 src/
-├── main.rs           # Application entry point
+├── constants.rs     # Application constants
+├── utils.rs         # Utility functions
+├── main.rs          # Application entry point
 ├── lib.rs           # Library exports
 ├── mcp.rs           # MCP protocol types
 ├── server.rs        # MCP server implementation
 ├── github.rs        # GitHub API client
 └── handlers.rs      # Tool and resource handlers
+bin/
+└── get-my-notion-mcp # npm binary wrapper
+scripts/
+└── build-and-package.sh # Build script
 tests/
-└── integration_tests.rs  # Integration tests
+└── integration_tests.rs # Integration tests
 ```
 
 ## MCP Protocol Compliance
 
-This server implements MCP version `2024-11-05` and supports:
+This server implements MCP version `2025-08-16` and supports:
 
 - ✅ Server initialization
 - ✅ Tool listing and execution
